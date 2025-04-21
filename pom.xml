@@ -95,7 +95,7 @@
 				<version>3.4.4</version>
 				<configuration>
 					<to>
-						<image>us-central1-docker.pkg.dev/burner-keskumar5/kafka-repo/kafka-streams-processor:v12</image>
+						<image>us-central1-docker.pkg.dev/burner-keskumar5/kafka-repo/kafka-streams-processor:v13</image>
 					</to>
 					<container>
 						<format>OCI</format>
