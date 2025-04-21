@@ -9,48 +9,49 @@ import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
 import org.springframework.context.annotation.Bean;
-import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.kafka.annotation.EnableKafkaStreams;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 
+@EnableKafkaStreams
 @Component
 public class OrderStreamProcessor {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Bean
-    public KStream<String, ProcessedStandingOrder> processOrders(StreamsBuilder builder) {
-        // Create JsonSerde for both input and output
-        JsonSerde<StandingOrder> standingOrderSerde = new JsonSerde<>(StandingOrder.class);
-        JsonSerde<ProcessedStandingOrder> processedStandingOrderSerde = new JsonSerde<>(ProcessedStandingOrder.class);
+    public KStream<String, StandingOrder> processOrders(StreamsBuilder builder) {
+        // Create a custom Serde for StandingOrder
+        StandingOrderSerde standingOrderSerde = StandingOrderSerde.of();
 
-        // Consume the input stream with the StandingOrder
         KStream<String, StandingOrder> stream = builder.stream(
                 "orders-topic",
                 Consumed.with(Serdes.String(), standingOrderSerde)
         );
 
-        // Apply business logic and map values to ProcessedStandingOrder
-        KStream<String, ProcessedStandingOrder> processedStream = stream.mapValues(order -> {
-            ProcessedStandingOrder processed = new ProcessedStandingOrder();
-            processed.setOrderId(order.getOrderId());
-            processed.setCustomerId(order.getCustomerId());
-            processed.setAmount(order.getAmount());
-            processed.setAccountNumber(order.getAccountNumber());
-            processed.setSortCode(order.getSortCode());
-            processed.setStartDate(order.getStartDate());
-            processed.setEndDate(order.getEndDate());
-            processed.setFrequency(order.getFrequency());
-            processed.setStatus(getStatus(order));
-            processed.setNextExecutionDate(getNextExecutionDate(order));
-            return processed;
-        });
+        stream.mapValues(order -> {
+            try {
+                ProcessedStandingOrder processed = new ProcessedStandingOrder();
+                processed.setOrderId(order.getOrderId());
+                processed.setCustomerId(order.getCustomerId());
+                processed.setAmount(order.getAmount());
+                processed.setAccountNumber(order.getAccountNumber());
+                processed.setSortCode(order.getSortCode());
+                processed.setStartDate(order.getStartDate());
+                processed.setEndDate(order.getEndDate());
+                processed.setFrequency(order.getFrequency());
+                processed.setStatus(getStatus(order));
+                processed.setNextExecutionDate(getNextExecutionDate(order));
 
-        // Produce to the processed-orders-topic with JsonSerde for ProcessedStandingOrder
-        processedStream.to("processed-orders-topic", Produced.with(Serdes.String(), processedStandingOrderSerde));
+                return processed; // Return the ProcessedStandingOrder object directly
+            } catch (Exception e) {
+                throw new RuntimeException("Error processing order: " + order, e);
+            }
+        }).to("processed-orders-topic", Produced.with(Serdes.String(), new ProcessedStandingOrderSerde())); // Use the custom Serde
 
-        return processedStream;
+        return stream;
     }
 
     private String getStatus(StandingOrder standingOrder) {
