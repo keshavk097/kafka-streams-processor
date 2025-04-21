@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-publisher
+  namespace: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-streams-processor
+  template:
+    metadata:
+      labels:
+        app: kafka-streams-processor
+    spec:
+      imagePullSecrets:
+        - name: my-gar1-secret
+      containers:
+        - name: kafka-streams-processor
+          image: us-central1-docker.pkg.dev/burner-keskumar5/kafka-repo/kafka-streams-processor:v1
+          ports:
+            - containerPort: 8080
