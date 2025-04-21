@@ -10,7 +10,7 @@ import org.apache.kafka.common.serialization.Serdes;
 public class StandingOrderSerde extends Serdes.WrapperSerde<StandingOrder> {
 
     public StandingOrderSerde() {
-        super(new JsonSerializer<>(), new JsonDeserializer<>(StandingOrder.class));
+        super(new JsonSerializer<>(), new JsonDeserializer<>(StandingOrder.class).trustedPackages("com.example.order_publisher.model", "com.example.kafka_streams_processor.model"));
     }
 
     public static StandingOrderSerde of() {
