@@ -39,20 +39,14 @@
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
 		</dependency>
-
-		<!-- Kafka Streams Core Library -->
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-streams</artifactId>
-			<version>3.3.2</version> <!-- Use a compatible version -->
 		</dependency>
-
-		<!-- Jackson Databind for JSON serialization -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -101,7 +95,7 @@
 				<version>3.4.4</version>
 				<configuration>
 					<to>
-						<image>us-central1-docker.pkg.dev/burner-keskumar5/kafka-repo/kafka-streams-processor:v9</image>
+						<image>us-central1-docker.pkg.dev/burner-keskumar5/kafka-repo/kafka-streams-processor:v11</image>
 					</to>
 					<container>
 						<format>OCI</format>
