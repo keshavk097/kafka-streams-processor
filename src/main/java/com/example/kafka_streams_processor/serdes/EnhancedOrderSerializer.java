@@ -12,7 +12,7 @@ public class EnhancedOrderSerializer implements Serializer<ProcessedStandingOrde
     public EnhancedOrderSerializer() {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }
 
     @Override
