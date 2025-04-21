@@ -5,9 +5,13 @@ package com.example.kafka_streams_processor.processor;
 import com.example.kafka_streams_processor.model.ProcessedStandingOrder;
 import com.example.kafka_streams_processor.model.StandingOrder;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.Produced;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -18,12 +22,16 @@ public class OrderStreamProcessor {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Bean
-    public KStream<String, String> processOrders(StreamsBuilder builder) {
-        KStream<String, String> stream = builder.stream("orders-topic");
+    public void  processOrders(StreamsBuilder builder) {
+        //KStream<String, String> stream = builder.stream("orders-topic");
+        KStream<String, StandingOrder> stream = builder.stream(
+                "orders-topic",
+                Consumed.with(Serdes.String(), new JsonSerde<>(StandingOrder.class))
+        );
 
-        stream.mapValues(orderJson -> {
+        stream.mapValues(order -> {
             try {
-                StandingOrder order = objectMapper.readValue(orderJson, StandingOrder.class);
+
                 ProcessedStandingOrder processed = new ProcessedStandingOrder();
                 processed.setOrderId(order.getOrderId());
                 processed.setCustomerId(order.getCustomerId());
@@ -37,11 +45,9 @@ public class OrderStreamProcessor {
                 processed.setNextExecutionDate(getNextExecutionDate(order));
                 return objectMapper.writeValueAsString(processed);
             } catch (Exception e) {
-                throw new RuntimeException("Error processing order: " + orderJson, e);
+                throw new RuntimeException("Error processing order: " + order, e);
             }
-        }).to("processed-orders-topic");
-
-        return stream;
+        }).to("processed-orders-topic", Produced.with(Serdes.String(), Serdes.String()));
     }
     private String getStatus(StandingOrder standingOrder){
         LocalDate today = LocalDate.now();
