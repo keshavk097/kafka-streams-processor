@@ -22,7 +22,7 @@ public class OrderStreamProcessor {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Bean
-    public void  processOrders(StreamsBuilder builder) {
+    public KStream<String, StandingOrder>  processOrders(StreamsBuilder builder) {
         //KStream<String, String> stream = builder.stream("orders-topic");
         KStream<String, StandingOrder> stream = builder.stream(
                 "orders-topic",
@@ -48,7 +48,9 @@ public class OrderStreamProcessor {
                 throw new RuntimeException("Error processing order: " + order, e);
             }
         }).to("processed-orders-topic", Produced.with(Serdes.String(), Serdes.String()));
+        return stream;
     }
+
     private String getStatus(StandingOrder standingOrder){
         LocalDate today = LocalDate.now();
         if (standingOrder.getStartDate() != null && standingOrder.getEndDate() != null) {
