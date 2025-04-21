@@ -17,6 +17,6 @@ spec:
         - name: my-gar1-secret
       containers:
         - name: kafka-streams-processor
-          image: us-central1-docker.pkg.dev/burner-keskumar5/kafka-repo/kafka-streams-processor:v3
+          image: us-central1-docker.pkg.dev/burner-keskumar5/kafka-repo/kafka-streams-processor:v4
           ports:
             - containerPort: 8080
