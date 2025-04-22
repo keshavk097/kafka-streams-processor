@@ -21,7 +21,7 @@ import java.util.Map;
 @Configuration
 public class KafkaStreamsAppConfig {
 
-    @Bean
+  /*  @Bean
     public org.apache.kafka.streams.KafkaStreams kafkaStreams() {
         var builder = new StreamsBuilder();
 
@@ -78,5 +78,5 @@ public class KafkaStreamsAppConfig {
         };
         return nextExecutionDate;
     }
-
+*/
 }

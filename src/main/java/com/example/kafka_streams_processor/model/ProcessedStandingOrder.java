@@ -18,6 +18,8 @@ public class ProcessedStandingOrder {
 
     private String customerId;
 
+    private String name;
+
     private String accountNumber;
 
     private String sortCode;
@@ -25,6 +27,8 @@ public class ProcessedStandingOrder {
     private Double amount;
 
     private String frequency;
+
+    private Double accountBalance;
 
     @JsonFormat(pattern = "yyyy-MM-dd") // Optional: Specify the format for LocalDate
     @JsonSerialize(using = LocalDateSerializer.class) // Use a custom serializer (optional)
