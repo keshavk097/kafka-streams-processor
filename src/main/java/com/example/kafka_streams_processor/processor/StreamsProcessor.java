@@ -8,6 +8,8 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
@@ -17,26 +19,36 @@ import java.util.Map;
 
 @Component
 public class StreamsProcessor {
+    private static final Logger logger = LoggerFactory.getLogger(StreamsProcessor.class);
 
     @Bean
     public org.apache.kafka.streams.KafkaStreams  joinStreams() {
+
         StreamsBuilder builder = new StreamsBuilder();
 
         var orderSerde = Serdes.serdeFrom(new OrderSerializer(), new OrderDeserializer());
         var enhancedSerde = Serdes.serdeFrom(new EnhancedOrderSerializer(), new EnhancedOrderDeserializer());
         var customerSerde = Serdes.serdeFrom(new CustomerAccountSerializer(), new CustomerAccountDeserializer());
 
+        logger.debug("Setting up Kafka Streams topology for order and customer join");
+
         KStream<String, StandingOrder> standingOrderStream = builder
-                .stream("orders-topic", Consumed.with(Serdes.String(), orderSerde));
+                .stream("orders-topic", Consumed.with(Serdes.String(), orderSerde))
+                .peek((key, value) -> logger.debug("Received StandingOrder: key={}, value={}", key, value));
 
         KStream<String, StandingOrder> rekeyedStandingOrderStream = standingOrderStream
-                .selectKey((key, value) -> value.getCustomerId());
+                .selectKey((key, value) -> {
+                        logger.debug("Rekeying order with customerId: {}", value.getCustomerId());
+                        return value.getCustomerId();
+                });
         KStream<String, CustomerAccount> customerAccountStream = builder
-                .stream("customer-account-detail-topic", Consumed.with(Serdes.String(), customerSerde));
+                .stream("customer-account-detail-topic", Consumed.with(Serdes.String(), customerSerde))
+                .peek((key, value) -> logger.debug("Received CustomerAccount: key={}, value={}", key, value));
 
         KStream<String, ProcessedStandingOrder> joinedStream = rekeyedStandingOrderStream.join(
                 customerAccountStream,
                 (order, account) -> {
+                    logger.debug("Joining order {} with account {}", order.getOrderId(), account.getName());
                     ProcessedStandingOrder processedOrder = new ProcessedStandingOrder();
                     processedOrder.setOrderId(order.getOrderId());
                     processedOrder.setCustomerId(order.getCustomerId());
@@ -55,15 +67,17 @@ public class StreamsProcessor {
                 JoinWindows.ofTimeDifferenceWithNoGrace(Duration.ofMinutes(5)),
                 StreamJoined.with(Serdes.String(), orderSerde, customerSerde)
         );
-
         // Output to topic
         joinedStream.to("standing-order-detail-topic", Produced.with(Serdes.String(), enhancedSerde));
+        logger.info("Topology defined, writing joined records to standing-order-detail-topic");
+
         var props = Map.of(
                 StreamsConfig.APPLICATION_ID_CONFIG, "order-stream-processor",
                 StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "my-kafka-kafka-bootstrap.kafka.svc:9092"
         );
 
         var streams = new org.apache.kafka.streams.KafkaStreams(builder.build(), new StreamsConfig(props));
+        logger.info("Starting Kafka Streams application");
         streams.start();
         return streams;
     }
