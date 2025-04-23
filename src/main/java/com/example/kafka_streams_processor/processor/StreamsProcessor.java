@@ -36,16 +36,16 @@ public class StreamsProcessor {
                 .stream("orders-topic", Consumed.with(Serdes.String(), orderSerde))
                 .peek((key, value) -> logger.debug("Received StandingOrder: key={}, value={}", key, value));
 
-        KStream<String, StandingOrder> rekeyedStandingOrderStream = standingOrderStream
+/*        KStream<String, StandingOrder> rekeyedStandingOrderStream = standingOrderStream
                 .selectKey((key, value) -> {
                         logger.debug("Rekeying order with customerId: {}", value.getCustomerId());
                         return value.getCustomerId();
-                });
+                });*/
         KStream<String, CustomerAccount> customerAccountStream = builder
                 .stream("customer-account-detail-topic", Consumed.with(Serdes.String(), customerSerde))
                 .peek((key, value) -> logger.debug("Received CustomerAccount: key={}, value={}", key, value));
 
-        KStream<String, ProcessedStandingOrder> joinedStream = rekeyedStandingOrderStream.join(
+        KStream<String, ProcessedStandingOrder> joinedStream = standingOrderStream.join(
                 customerAccountStream,
                 (order, account) -> {
                     logger.debug("Joining order {} with account {}", order.getOrderId(), account.getName());
